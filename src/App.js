@@ -1,14 +1,15 @@
 import React from "react";
 import Sidebar from "./components/Sidebar";
 import Editor from "./components/Editor";
-import { data } from "./data";
+import data  from "./data";
 import Split from 'react-split';
 import {nanoid} from "nanoid"
 
 export default function App() {
     const [notes, setNotes] = React.useState(
-        JSON.parse(localStorage.getItem("notes")) || []
+        () => JSON.parse(localStorage.getItem("notes")) || []
     )
+
     const [currentNoteId, setCurrentNoteId] = React.useState(
         (notes[0] && notes[0].id) || ""
     )
@@ -29,12 +30,61 @@ export default function App() {
         setCurrentNoteId(newNote.id)
     }
 
-    function updateNote(text) {
+    // This doesn't rearrange the notes to top position
+/*     function updateNote(text) {
         setNotes(prevNotes => prevNotes.map(note => {
             return note.id === currentNoteId
             ? { ...note, body: text }
             : note
         }))
+    }
+ */
+    // This rearranges the notes to top position(option 1)
+/*     function updateNote(text) {
+        setNotes(prevNotes => {
+            // Find the index of the note with the currentNoteId
+            const index = prevNotes.findIndex(note => note.id === currentNoteId);
+    
+            // If the note with the currentNoteId is found, update its body and move it to the top
+            if (index !== -1) {
+                const updatedNote = { ...prevNotes[index], body: text };
+                
+                // Create a new array with the updated note at the beginning and the rest of the notes
+                const updatedNotes = [
+                    updatedNote,
+                    ...prevNotes.slice(0, index),
+                    ...prevNotes.slice(index + 1)
+                ];
+    
+                return updatedNotes;
+            }
+    
+            // If the note with the currentNoteId is not found, return the original array
+            return prevNotes;
+        });
+    } */
+
+    // This rearranges the notes to top position(option 2)
+    function updateNote(text) {
+        setNotes(prevNotes => {
+            const newArray = []
+            for (let i = 0; i < prevNotes.length; i++) {
+               const oldNote = prevNotes[i]
+               if (oldNote.id === currentNoteId) {
+                     const newNote = {...oldNote, body: text}
+                     newArray.unshift(newNote)
+               } else {
+                    newArray.push(oldNote)
+               }
+            }
+            return newArray
+        })
+    }
+    
+    function deleteNote(event, noteId) {
+        event.stopPropagation()
+        // Your code here
+        setNotes(prevNotes => prevNotes.filter(note => note.id !== noteId))
     }
 
     function findCurrentNote() {
@@ -64,6 +114,7 @@ export default function App() {
                     currentNote={findCurrentNote()} 
                     setCurrentNoteId={setCurrentNoteId}
                     onAddNote={createNewNote}
+                    deleteNote={deleteNote}
                 />
                 {
                     currentNoteId && 
